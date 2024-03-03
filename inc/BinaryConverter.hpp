@@ -2,15 +2,15 @@
 // Created by rafae on 1/21/2024.
 //
 
-#ifndef BINARY_DATA_PROCESSING_BINARY_PROCESSOR_H
-#define BINARY_DATA_PROCESSING_BINARY_PROCESSOR_H
+#ifndef BINARY_DATA_PROCESSING_BINARYCONVERTER_HPP
+#define BINARY_DATA_PROCESSING_BINARYCONVERTER_HPP
 
 #include <iostream>
 #include <typeinfo>
-#include "binary_processors_enumerators.h"
+#include "TypeDefinitions.hpp"
 
 namespace CES {
-    class binary_processor {
+    class BinaryConverter {
         template<typename T>
         static void serialize_element(const T &elem, std::ostream &ostream);
 
@@ -24,7 +24,7 @@ namespace CES {
 
     public:
 
-        binary_processor() = delete;
+        BinaryConverter() = delete;
 
         template<typename T>
         static void serialize(T &obj, std::ostream &ostream);
@@ -39,14 +39,14 @@ namespace CES {
         static void deserialize(T (&arr)[N], std::istream &istream);
     };
 
-    system_type binary_processor::detect_system_type() {
+    system_type BinaryConverter::detect_system_type() {
         int n = 1;
         if (*(char *) &n == 1) return LE;
         else return BE;
     }
 
     template<typename T>
-    T binary_processor::switch_bytes(T &obj) {
+    T BinaryConverter::switch_bytes(T &obj) {
         int total_bits = sizeof(T) * 8;
         int final = 0;
         for (int i = 0; i < total_bits; i += 8) {
@@ -58,7 +58,7 @@ namespace CES {
     }
 
     template<typename T>
-    void binary_processor::deserialize(T &obj, std::istream &istream) {
+    void BinaryConverter::deserialize(T &obj, std::istream &istream) {
         char t_char, sts_char;
         istream.get(sts_char);
         istream.get(t_char);
@@ -160,7 +160,7 @@ namespace CES {
     }
 
     template<typename T, std::size_t N>
-    void binary_processor::deserialize(T (&arr)[N], std::istream &istream) {
+    void BinaryConverter::deserialize(T (&arr)[N], std::istream &istream) {
         size_t size;
         char t_char, sts_char;
         istream.get(sts_char);
@@ -305,12 +305,12 @@ namespace CES {
     }
 
     template<typename T>
-    void binary_processor::serialize(T &, std::ostream &) {
+    void BinaryConverter::serialize(T &, std::ostream &) {
         throw std::runtime_error("Type not supported");
     }
 
     template<>
-    void binary_processor::serialize<int>(int &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<int>(int &obj, std::ostream &ostream) {
         type t = type::INT;
         system_type st = detect_system_type();
 
@@ -320,7 +320,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<unsigned int>(unsigned int &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<unsigned int>(unsigned int &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_INT;
         system_type st = detect_system_type();
 
@@ -330,7 +330,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<short>(short &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<short>(short &obj, std::ostream &ostream) {
         type t = type::SHORT;
         system_type st = detect_system_type();
 
@@ -340,7 +340,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<unsigned short>(unsigned short &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<unsigned short>(unsigned short &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_SHORT;
         system_type st = detect_system_type();
 
@@ -350,7 +350,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<long>(long &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<long>(long &obj, std::ostream &ostream) {
         type t = type::LONG;
         system_type st = detect_system_type();
 
@@ -360,7 +360,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<unsigned long>(unsigned long &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<unsigned long>(unsigned long &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_LONG;
         system_type st = detect_system_type();
 
@@ -370,7 +370,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<long long>(long long &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<long long>(long long &obj, std::ostream &ostream) {
         type t = type::LONG_LONG;
         system_type st = detect_system_type();
 
@@ -380,7 +380,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<unsigned long long>(unsigned long long &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<unsigned long long>(unsigned long long &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_LONG_LONG;
         system_type st = detect_system_type();
 
@@ -390,7 +390,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<float>(float &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<float>(float &obj, std::ostream &ostream) {
         type t = type::FLOAT;
         system_type st = detect_system_type();
 
@@ -400,7 +400,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<double>(double &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<double>(double &obj, std::ostream &ostream) {
         type t = type::DOUBLE;
         system_type st = detect_system_type();
 
@@ -410,7 +410,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<long double>(long double &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<long double>(long double &obj, std::ostream &ostream) {
         type t = type::LONG_DOUBLE;
         system_type st = detect_system_type();
 
@@ -420,7 +420,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<std::string>(std::string &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<std::string>(std::string &obj, std::ostream &ostream) {
         size_t size = obj.size();
         type t = type::STRING;
         system_type st = detect_system_type();
@@ -432,7 +432,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<char>(char &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<char>(char &obj, std::ostream &ostream) {
 
         type t = type::CHAR;
         system_type st = detect_system_type();
@@ -443,7 +443,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<unsigned char>(unsigned char &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<unsigned char>(unsigned char &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_CHAR;
         system_type st = detect_system_type();
 
@@ -453,7 +453,7 @@ namespace CES {
     }
 
     template<>
-    void binary_processor::serialize<bool>(bool &obj, std::ostream &ostream) {
+    void BinaryConverter::serialize<bool>(bool &obj, std::ostream &ostream) {
         type t = type::BOOL;
         system_type st = detect_system_type();
 
@@ -463,7 +463,7 @@ namespace CES {
     }
 
     template<typename T>
-    type binary_processor::find_type(T) {
+    type BinaryConverter::find_type(T) {
         if (typeid(T) == typeid(int))return INT_ARRAY;
         else if (typeid(T) == typeid(unsigned int)) return UNSIGNED_INT_ARRAY;
         else if (typeid(T) == typeid(short)) return SHORT_ARRAY;
@@ -483,7 +483,7 @@ namespace CES {
     }
 
     template<typename T, std::size_t N>
-    void binary_processor::serialize(T (&arr)[N], std::ostream &ostream) {
+    void BinaryConverter::serialize(T (&arr)[N], std::ostream &ostream) {
         type t = find_type(arr[0]);
         size_t size = N;
         system_type st = detect_system_type();
@@ -497,7 +497,7 @@ namespace CES {
     }
 
     template<typename T>
-    void binary_processor::serialize_element(const T &elem, std::ostream &ostream) {
+    void BinaryConverter::serialize_element(const T &elem, std::ostream &ostream) {
         if constexpr (std::is_same<T, std::string>::value) {
             std::size_t elem_size = elem.size();
             ostream.write(reinterpret_cast<const char *>(&elem_size), sizeof(size_t));
@@ -507,4 +507,4 @@ namespace CES {
         }
     }
 }
-#endif //BINARY_DATA_PROCESSING_BINARY_PROCESSOR_H
+#endif //BINARY_DATA_PROCESSING_BINARYCONVERTER_HPP
