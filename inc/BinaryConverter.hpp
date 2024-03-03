@@ -5,20 +5,46 @@
 #ifndef BINARY_DATA_PROCESSING_BINARYCONVERTER_HPP
 #define BINARY_DATA_PROCESSING_BINARYCONVERTER_HPP
 
+/**
+ * @file BinaryConverter.hpp
+ * @brief Contains the BinaryConverter class that serializes and deserializes basic data structures.
+ * @author Rafael Costin Balan / Gheorghe Smoc
+ * @date 2024-03-03
+ * @version 1.0
+ * @details This file provides utilities for serializing and deserializing data to/from different types of input/output channel.
+ * It includes functions for handling serialization and deserialization for basic data types
+ * @copyright CES Public License
+ */
+
 #include <iostream>
 #include <typeinfo>
 #include "TypeDefinitions.hpp"
 
 namespace CES {
     class BinaryConverter {
+        /*
+         * Serializes the elements of different arrays.
+         * @param elem the element of the array to be serialized.
+         * @param ostream the output stream where the element is going to be serialized.
+         */
         template<typename T>
         static void serialize_element(const T &elem, std::ostream &ostream);
 
+        /*
+         * Finds the type of data structures and returns an enumerator.
+         */
         template<typename T>
-        static type find_type(T obj);
+        static type find_type(T);
 
+        /*
+         * Finds the endianess (LE/BE/I don't believe that ME exists) of the system that serializes/deserializes for the values to match.
+         */
         static system_type detect_system_type();
 
+        /*
+         * If the endianess does not match, it swaps the bytes, so that the value is not lost.
+         * @param The obj of which the bytes are being swapped.
+         */
         template<typename T>
         static T switch_bytes(T &obj);
 
@@ -26,32 +52,53 @@ namespace CES {
 
         BinaryConverter() = delete;
 
+        /*
+         * Serializes an object to an output stream. It uses template specializations to differentiate between the different data types.
+         * @param obj the object to be serialized.
+         * @param ostream the output stream where the object is going to be serialized.
+         */
         template<typename T>
         static void serialize(T &obj, std::ostream &ostream);
 
+        /*
+         * Serializes an array of objects to an output stream.
+         * @param array of objects to be serialized.
+         * @param ostream the output stream where the objects are going to be serialized.
+         */
         template<typename T, std::size_t N>
         static void serialize(T (&arr)[N], std::ostream &ostream);
 
+        /*
+         * Deserializes an object. It uses a switch statement based on the type enumerator to differentiate between the different data types.
+         * @param elem the object to be deserialized.
+         * @param istream the input stream where it reads the data from.
+         */
         template<typename T>
         static void deserialize(T &obj, std::istream &istream);
 
+
+        /*
+         * Deserializes an array of objects. It a switch statement based on the type enumerator to differentiate between the different data types.
+         * @param elem the object to be deserialized.
+         * @param istream the input stream where it reads the data from.
+         */
         template<typename T, std::size_t N>
         static void deserialize(T (&arr)[N], std::istream &istream);
     };
 
     system_type BinaryConverter::detect_system_type() {
         int n = 1;
-        if (*(char *) &n == 1) return LE;
-        else return BE;
-    }
+        if (*(char *) &n == 1) return LE; // it casts the address of the int to a pointer of char
+        else return BE; // if the derefrenced value is 1 that means it is little endian, otherwise big endian.
+    } //it works because casting it to a char only saves the left most bit.
 
     template<typename T>
     T BinaryConverter::switch_bytes(T &obj) {
         int total_bits = sizeof(T) * 8;
         int final = 0;
         for (int i = 0; i < total_bits; i += 8) {
-            int byte = (obj >> i) & 0xFF;
-            final |= (byte << (total_bits - 8 - i));
+            int byte = (obj >> i) & 0xFF; //shifts the bytes that is being processed, then masks the higher order bytes.
+            final |= (byte << (total_bits - 8 - i)); // shifts the byte to the left and combines with the other bytes that were processed
         }
         obj = final;
         return obj;
@@ -63,9 +110,9 @@ namespace CES {
         istream.get(sts_char);
         istream.get(t_char);
 
-        type t = static_cast<type>(t_char);
-        system_type sts = static_cast<system_type>(sts_char), st = detect_system_type();
-        switch (t) {
+        type t = static_cast<type>(t_char); // gets the type of the object that was stored
+        system_type sts = static_cast<system_type>(sts_char), st = detect_system_type(); // gets the type of the system and the type of the system that serialized the data.
+        switch (t) { // deserializes data based on the type of the data that was serialized. The main difference between these cases is the size of the data that was serialized.
             case INT:
                 if (typeid(int) != typeid(T))
                     throw std::invalid_argument("Specified data type does not match serialized data type");
@@ -149,7 +196,6 @@ namespace CES {
                 break;
             default:
                 throw std::invalid_argument("Data type not accepted");
-                break;
         }
         if (st != sts) {
             if constexpr (!std::is_same<T, std::string>::value && !std::is_same<T, char>::value &&
@@ -171,6 +217,8 @@ namespace CES {
                 st = detect_system_type();
 
         istream.read(reinterpret_cast<char *>(&size), sizeof(size_t));
+
+        if(N < size)throw std::invalid_argument("Size of this array is less than the size of the array being deserialized. Optimal size: " + std::to_string(size));
 
         switch (t) {
             case INT_ARRAY:
@@ -251,7 +299,7 @@ namespace CES {
                 if (typeid(long double) != typeid(T))
                     throw std::invalid_argument("Object type does not match serialized data type (LONG DOUBLE ARRAY)");
                 for (int i = 0; i < size; ++i) {
-                    istream.read(reinterpret_cast<char *>(&arr[i]), sizeof(int));
+                    istream.read(reinterpret_cast<char *>(&arr[i]), sizeof(long double));
                 }
                 break;
             case STRING_ARRAY:
@@ -288,7 +336,7 @@ namespace CES {
                 if (typeid(bool) != typeid(T))
                     throw std::invalid_argument("Object type does not match serialized data type (BOOL ARRAY)");
                 for (int i = 0; i < size; ++i) {
-                    istream.read(reinterpret_cast<char *>(&arr[i]), sizeof(int));
+                    istream.read(reinterpret_cast<char *>(&arr[i]), sizeof(bool));
                 }
                 break;
             default:
@@ -306,7 +354,7 @@ namespace CES {
 
     template<typename T>
     void BinaryConverter::serialize(T &, std::ostream &) {
-        throw std::runtime_error("Type not supported");
+        throw std::runtime_error("Type not supported"); // If a not supported data type is inputted. It throws an error.
     }
 
     template<>
@@ -314,9 +362,9 @@ namespace CES {
         type t = type::INT;
         system_type st = detect_system_type();
 
-        ostream.write(reinterpret_cast<char *>(&st), 1);
-        ostream.write(reinterpret_cast<char *>(&t), 1);
-        ostream.write(reinterpret_cast<char *>(&obj), sizeof(int));
+        ostream.write(reinterpret_cast<char *>(&st), 1); // adds the system type flag.
+        ostream.write(reinterpret_cast<char *>(&t), 1); // adds the data type flag.
+        ostream.write(reinterpret_cast<char *>(&obj), sizeof(int)); // serializes the data.
     }
 
     template<>
@@ -488,11 +536,11 @@ namespace CES {
         size_t size = N;
         system_type st = detect_system_type();
 
-        ostream.write(reinterpret_cast<char *>(&st), 1);
-        ostream.write(reinterpret_cast<const char *>(&t), 1);
-        ostream.write(reinterpret_cast<const char *>(&size), sizeof(size_t));
+        ostream.write(reinterpret_cast<char *>(&st), 1); // adds the system type flag.
+        ostream.write(reinterpret_cast<const char *>(&t), 1); // adds the data type flag.
+        ostream.write(reinterpret_cast<const char *>(&size), sizeof(size_t)); // adds the size of the array.
         for (const auto &elem: arr) {
-            serialize_element(elem, ostream);
+            serialize_element(elem, ostream); // serializes the data.
         }
     }
 

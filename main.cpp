@@ -5,25 +5,27 @@
  * @file main.cpp
  * @brief The main of this project.
  * @author Rafael Costin Balan
- * @date 2024-01-05
+ * @date 2024-03-03
  * @version 1.0
- * @details It has an demonstration on how the
- * @copyright Rafael Public License
+ * @details It has an demonstration on how the BinaryConverter class works
+ * @copyright CES Public License
  */
 #include <fstream>
 #include <iostream>
 #include "inc/BinaryConverter.hpp"
 
 int main() {
-    int ccc = 1;
+    bool ccc[8] = {1, 1, 0, 0, 1, 0, 1, 1};
     std::ofstream nei("bianry_file.bin");
     CES::BinaryConverter::serialize(ccc, nei);
     nei.close();
 
     std::ifstream noi("bianry_file.bin");
-    int test;
+    bool test[8];
     CES::BinaryConverter::deserialize(test, noi);
 
-    std::cout<<test;
+    for(const auto &item: test){
+        std::cout<<item<<' ';
+    }
     return 0;
 }
