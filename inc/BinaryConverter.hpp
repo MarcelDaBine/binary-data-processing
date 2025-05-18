@@ -16,7 +16,6 @@
  * @copyright CES Public License
  */
 
-#include <iostream>
 #include <typeinfo>
 #include "TypeDefinitions.hpp"
 
@@ -86,18 +85,18 @@ namespace CES {
         static void deserialize(T (&arr)[N], std::istream &istream);
     };
 
-    system_type BinaryConverter::detect_system_type() {
+    inline system_type BinaryConverter::detect_system_type() {
         int n = 1;
-        if (*(char *) &n == 1) return LE; // it casts the address of the int to a pointer of char
-        else return BE; // if the derefrenced value is 1 that means it is little endian, otherwise big endian.
+        if (*reinterpret_cast<char *>(&n) == 1) return LE; // it casts the address of the int to a pointer of char
+        else return BE; // if the dereferenced value is 1 that means it is little endian, otherwise big endian.
     } //it works because casting it to a char only saves the left most bit.
 
     template<typename T>
     T BinaryConverter::switch_bytes(T &obj) {
-        int total_bits = sizeof(T) * 8;
+        const int total_bits = sizeof(T) * 8;
         int final = 0;
         for (int i = 0; i < total_bits; i += 8) {
-            int byte = (obj >> i) & 0xFF; //shifts the bytes that is being processed, then masks the higher order bytes.
+            const int byte = (obj >> i) & 0xFF; //shifts the bytes that is being processed, then masks the higher order bytes.
             final |= (byte << (total_bits - 8 - i)); // shifts the byte to the left and combines with the other bytes that were processed
         }
         obj = final;
@@ -110,8 +109,9 @@ namespace CES {
         istream.get(sts_char);
         istream.get(t_char);
 
-        type t = static_cast<type>(t_char); // gets the type of the object that was stored
-        system_type sts = static_cast<system_type>(sts_char), st = detect_system_type(); // gets the type of the system and the type of the system that serialized the data.
+        const auto t = static_cast<type>(t_char); // gets the type of the object that was stored
+        const auto sts = static_cast<system_type>(sts_char);
+        const system_type st = detect_system_type(); // gets the type of the system and the type of the system that serialized the data.
         switch (t) { // deserializes data based on the type of the data that was serialized. The main difference between these cases is the size of the data that was serialized.
             case INT:
                 if (typeid(int) != typeid(T))
@@ -169,7 +169,7 @@ namespace CES {
                 istream.read(reinterpret_cast<char *>(&obj), sizeof(long double));
                 break;
             case STRING:
-                if constexpr (std::is_same<T, std::string>::value) {
+                if constexpr (std::is_same_v<T, std::string>) {
                     size_t size;
                     istream.read(reinterpret_cast<char *>(&size), sizeof(size_t));
 
@@ -198,8 +198,8 @@ namespace CES {
                 throw std::invalid_argument("Data type not accepted");
         }
         if (st != sts) {
-            if constexpr (!std::is_same<T, std::string>::value && !std::is_same<T, char>::value &&
-                          !std::is_same<T, unsigned char>::value && !std::is_same<T, bool>::value) {
+            if constexpr (!std::is_same_v<T, std::string> && !std::is_same_v<T, char> &&
+                          !std::is_same_v<T, unsigned char> && !std::is_same_v<T, bool>) {
                 switch_bytes(obj);
             }
         }
@@ -212,9 +212,9 @@ namespace CES {
         istream.get(sts_char);
         istream.get(t_char);
 
-        type t = static_cast<type>(t_char);
-        system_type sts = static_cast<system_type>(sts_char),
-                st = detect_system_type();
+        const auto t = static_cast<type>(t_char);
+        const auto sts = static_cast<system_type>(sts_char);
+        const system_type st = detect_system_type();
 
         istream.read(reinterpret_cast<char *>(&size), sizeof(size_t));
 
@@ -303,7 +303,7 @@ namespace CES {
                 }
                 break;
             case STRING_ARRAY:
-                if constexpr (std::is_same<T, std::string>::value) {
+                if constexpr (std::is_same_v<T, std::string>) {
                     size_t string_size;
                     for (int i = 0; i < size; ++i) {
                         istream.read(reinterpret_cast<char *>(&string_size), sizeof(size_t));
@@ -343,8 +343,8 @@ namespace CES {
                 throw std::invalid_argument("Data type not accepted");
         }
         if (st != sts) {
-            if constexpr (!std::is_same<T, std::string>::value && !std::is_same<T, char>::value &&
-                          !std::is_same<T, unsigned char>::value && !std::is_same<T, bool>::value) {
+            if constexpr (!std::is_same_v<T, std::string> && !std::is_same_v<T, char> &&
+                          !std::is_same_v<T, unsigned char> && !std::is_same_v<T, bool>) {
                 for (int i = 0; i < size; ++i) {
                     switch_bytes(arr[i]);
                 }
@@ -358,7 +358,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<int>(int &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<int>(int &obj, std::ostream &ostream) {
         type t = type::INT;
         system_type st = detect_system_type();
 
@@ -368,7 +368,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<unsigned int>(unsigned int &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<unsigned int>(unsigned int &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_INT;
         system_type st = detect_system_type();
 
@@ -378,7 +378,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<short>(short &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<short>(short &obj, std::ostream &ostream) {
         type t = type::SHORT;
         system_type st = detect_system_type();
 
@@ -388,7 +388,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<unsigned short>(unsigned short &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<unsigned short>(unsigned short &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_SHORT;
         system_type st = detect_system_type();
 
@@ -398,7 +398,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<long>(long &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<long>(long &obj, std::ostream &ostream) {
         type t = type::LONG;
         system_type st = detect_system_type();
 
@@ -408,7 +408,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<unsigned long>(unsigned long &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<unsigned long>(unsigned long &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_LONG;
         system_type st = detect_system_type();
 
@@ -418,7 +418,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<long long>(long long &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<long long>(long long &obj, std::ostream &ostream) {
         type t = type::LONG_LONG;
         system_type st = detect_system_type();
 
@@ -428,7 +428,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<unsigned long long>(unsigned long long &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<unsigned long long>(unsigned long long &obj, std::ostream &ostream) {
         type t = type::UNSIGNED_LONG_LONG;
         system_type st = detect_system_type();
 
@@ -438,7 +438,7 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<float>(float &obj, std::ostream &ostream) {
+    inline void BinaryConverter::serialize<float>(float &obj, std::ostream &ostream) {
         type t = type::FLOAT;
         system_type st = detect_system_type();
 
@@ -448,8 +448,8 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<double>(double &obj, std::ostream &ostream) {
-        type t = type::DOUBLE;
+    inline void BinaryConverter::serialize<double>(double &obj, std::ostream &ostream) {
+        constexpr type t = type::DOUBLE;
         system_type st = detect_system_type();
 
         ostream.write(reinterpret_cast<char *>(&st), 1);
@@ -458,8 +458,8 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<long double>(long double &obj, std::ostream &ostream) {
-        type t = type::LONG_DOUBLE;
+    inline void BinaryConverter::serialize<long double>(long double &obj, std::ostream &ostream) {
+        constexpr type t = type::LONG_DOUBLE;
         system_type st = detect_system_type();
 
         ostream.write(reinterpret_cast<char *>(&st), 1);
@@ -468,9 +468,9 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<std::string>(std::string &obj, std::ostream &ostream) {
-        size_t size = obj.size();
-        type t = type::STRING;
+    inline void BinaryConverter::serialize<std::string>(std::string &obj, std::ostream &ostream) {
+        const size_t size = obj.size();
+        constexpr type t = type::STRING;
         system_type st = detect_system_type();
 
         ostream.write(reinterpret_cast<char *>(&st), 1);
@@ -480,9 +480,8 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<char>(char &obj, std::ostream &ostream) {
-
-        type t = type::CHAR;
+    inline void BinaryConverter::serialize<char>(char &obj, std::ostream &ostream) {
+        constexpr type t = type::CHAR;
         system_type st = detect_system_type();
 
         ostream.write(reinterpret_cast<char *>(&st), 1);
@@ -491,8 +490,8 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<unsigned char>(unsigned char &obj, std::ostream &ostream) {
-        type t = type::UNSIGNED_CHAR;
+    inline void BinaryConverter::serialize<unsigned char>(unsigned char &obj, std::ostream &ostream) {
+        constexpr type t = type::UNSIGNED_CHAR;
         system_type st = detect_system_type();
 
         ostream.write(reinterpret_cast<char *>(&st), 1);
@@ -501,8 +500,8 @@ namespace CES {
     }
 
     template<>
-    void BinaryConverter::serialize<bool>(bool &obj, std::ostream &ostream) {
-        type t = type::BOOL;
+    inline void BinaryConverter::serialize<bool>(bool &obj, std::ostream &ostream) {
+        constexpr type t = type::BOOL;
         system_type st = detect_system_type();
 
         ostream.write(reinterpret_cast<char *>(&st), 1);
@@ -546,8 +545,8 @@ namespace CES {
 
     template<typename T>
     void BinaryConverter::serialize_element(const T &elem, std::ostream &ostream) {
-        if constexpr (std::is_same<T, std::string>::value) {
-            std::size_t elem_size = elem.size();
+        if constexpr (std::is_same_v<T, std::string>) {
+            const std::size_t elem_size = elem.size();
             ostream.write(reinterpret_cast<const char *>(&elem_size), sizeof(size_t));
             ostream.write(elem.data(), elem_size);
         } else {
